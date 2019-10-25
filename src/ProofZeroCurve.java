@@ -1,9 +1,13 @@
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.util.Random;
 import java.util.Scanner;
 
-public class ProofZeroCurve {
+public class ProofZeroCurve
+{//*****************************************************************************************************************************************************************
+//вспомогательный блок и блок инициализации
+
     public static int command = -1;
     public static BigInteger p1, A1, r1, p2, A2, r2, l;
     public static Pair Q1 = new Pair(), P1 = new Pair(), Q2 = new Pair(), P2 = new Pair();
@@ -21,7 +25,8 @@ public class ProofZeroCurve {
             System.out.println("Неверный ввод");
     }
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException
+    {
         do {
             print();
             init();
@@ -34,10 +39,10 @@ public class ProofZeroCurve {
                 case 0:
                     break;
                 case 1:
-                    //GengBlum BlumNumber = new GengBlum();
+                    step1();
                     break;
                 case 2:
-                    //GengBit bit = new GengBit();
+                    step2();
                     break;
                 case 3:
                     //TransX x = new TransX();
@@ -52,9 +57,11 @@ public class ProofZeroCurve {
 
     public static Pair sum(Pair x1y1, Pair x2y2, BigInteger p, BigInteger A) {
         try {
-            BigInteger x1 = x1y1.x, y1 = x1y1.y, x2 = x2y2.x, y2 = x2y2.y, alph;
-            if (x1y1 == null)
+            if (x1y1 == null) {
                 return null;
+            }
+
+            BigInteger x1 = x1y1.x, y1 = x1y1.y, x2 = x2y2.x, y2 = x2y2.y, alph;
 
             if (x1.equals(x2) && y1.equals(y2)) {
                 if (y1.equals(BigInteger.ZERO))
@@ -73,6 +80,27 @@ public class ProofZeroCurve {
         }
     }
 
+    public static Pair mult(Pair point, BigInteger n, BigInteger A, BigInteger p)
+    {
+        Pair res = point;
+        for (int i = 0; i < n.intValue() - 1; i++)
+            res = sum(res, point, p, A);
+        return res;
+    }
+
+    public static boolean checkMult(Pair point, BigInteger n, BigInteger A, BigInteger p)
+    {
+        Pair res = point;
+        res = mult(point, n.subtract(BigInteger.ONE), A, p);
+
+        if (res == null)
+            return true;
+        res = sum(res, point, p, A);
+        if (res == null)
+            return false;
+        return true;
+    }
+
     public static void init() throws FileNotFoundException
     {
         initParam("verifier.txt");
@@ -88,6 +116,8 @@ public class ProofZeroCurve {
     {
         if (A1 == null || A2 == null || p1 == null || p2 == null || r1 == null || r2 == null || Q1.x == null || Q1.y == null
         || Q2.x == null || Q2.y == null || P1.x == null || P1.y == null || P2.x == null || P2.y == null || l == null)
+            return true;
+        if (l.compareTo(r2) > 0)
             return true;
         return false;
     }
@@ -111,4 +141,67 @@ public class ProofZeroCurve {
         {
         }
     }
+
+    public static void deleteAll() throws IOException
+    {
+        Files.deleteIfExists(new File("k_.txt").toPath());
+        Files.deleteIfExists(new File("k.txt").toPath());
+        Files.deleteIfExists(new File("R.txt").toPath());
+        Files.deleteIfExists(new File("bit.txt").toPath());
+    }
+
+//*******************************************************************************************************************************************************************
+//первый шаг: "Претендент: Сгенерировать точку R и отправить верификатору"
+
+    public static void step1() throws IOException
+    {
+        BigInteger k = new BigInteger(r2.bitLength() - 1, new Random()).mod(r2);
+        BigInteger k_ = k.multiply(l).mod(r2);
+        Pair R = mult(P2, k, A2, p2);
+
+        FileWriter out = new FileWriter("k.txt");
+        out.write(k + "");
+        out.close();
+
+        out = new FileWriter("k_.txt");
+        out.write(k_ + "");
+        out.close();
+
+        out = new FileWriter("R.txt");
+        out.write(R.x + " " + R.y);
+        out.close();
+    }
+
+//*******************************************************************************************************************************************************************
+//второй шаг: "Верификатор: Проверить точку R и послать претенденту случайный бит"
+
+    public static void step2() throws IOException
+    {
+        FileReader reader = new FileReader("R.txt");
+        Scanner scan = new Scanner(reader);
+
+        String[] help = scan.nextLine().split(" ");
+        Pair R = new Pair(new BigInteger(help[0]), new BigInteger(help[1]));
+
+        if (R.x == null|| R.y == null || R == null)
+        {
+            System.out.println("Некорректая точка R");
+            return;
+        }
+
+        if (checkMult(R, r1, A1, p1))
+        {
+            System.out.println("Некорректая точка R");
+            reader.close();
+            deleteAll();
+            return;
+        }
+
+        FileWriter out = new FileWriter("bit.txt");
+        out.write((Math.random() > 0.5 ? 1 : 0) + "");
+        out.close();
+    }
+
+//*******************************************************************************************************************************************************************
+//третий шаг: "Верификатор: Проверить точку R и послать претенденту случайный бит"
 }
