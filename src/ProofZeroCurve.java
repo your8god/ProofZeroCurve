@@ -45,10 +45,10 @@ public class ProofZeroCurve
                     step2();
                     break;
                 case 3:
-                    //TransX x = new TransX();
+                    step3();
                     break;
                 case 4:
-                    //Check check = new Check();
+                    step4();
                     break;
             }
 
@@ -136,6 +136,7 @@ public class ProofZeroCurve
             help = scan.nextLine().split(" ");
             P2 = new Pair(new BigInteger(help[0]), new BigInteger(help[1]));
             l = new BigInteger(scan.nextLine());
+            reader.close();
         }
         catch (Exception e)
         {
@@ -148,6 +149,8 @@ public class ProofZeroCurve
         Files.deleteIfExists(new File("k.txt").toPath());
         Files.deleteIfExists(new File("R.txt").toPath());
         Files.deleteIfExists(new File("bit.txt").toPath());
+        Files.deleteIfExists(new File("KK.txt").toPath());
+        //Files.deleteIfExists(new File("round.txt").toPath());
     }
 
 //*******************************************************************************************************************************************************************
@@ -182,6 +185,7 @@ public class ProofZeroCurve
 
         String[] help = scan.nextLine().split(" ");
         Pair R = new Pair(new BigInteger(help[0]), new BigInteger(help[1]));
+        reader.close();
 
         if (R.x == null|| R.y == null || R == null)
         {
@@ -194,6 +198,7 @@ public class ProofZeroCurve
             System.out.println("Некорректая точка R");
             reader.close();
             deleteAll();
+            Files.deleteIfExists(new File("round.txt").toPath());
             return;
         }
 
@@ -203,5 +208,111 @@ public class ProofZeroCurve
     }
 
 //*******************************************************************************************************************************************************************
-//третий шаг: "Верификатор: Проверить точку R и послать претенденту случайный бит"
+//третий шаг: "Претендент: Предьявление показателя k или k' на основе полученного бита"
+
+    public static void step3() throws IOException
+    {
+        FileReader reader = new FileReader("bit.txt");
+        Scanner scan = new Scanner(reader);
+
+        int bit = scan.nextInt();
+        reader.close();
+
+        FileWriter out = new FileWriter("KK.txt");
+        if (bit == 0)
+        {
+            reader = new FileReader("k.txt");
+            scan = new Scanner(reader);
+            BigInteger help = scan.nextBigInteger();
+            out.write(help + "");
+            out.close();
+            reader.close();
+        }
+        else
+        {
+            reader = new FileReader("k_.txt");
+            scan = new Scanner(reader);
+            BigInteger help = scan.nextBigInteger();
+            out.write(help + "");
+            out.close();
+            reader.close();
+        }
+    }
+
+//*******************************************************************************************************************************************************************
+//четвертый шаг: "Верификатор: Проверка знания l претендента"
+
+    public static void step4() throws IOException
+    {
+        FileReader reader = new FileReader("bit.txt");
+        Scanner scan = new Scanner(reader);
+        int bit = scan.nextInt();
+        reader.close();
+
+        reader = new FileReader("R.txt");
+        scan = new Scanner(reader);
+        String[] help = scan.nextLine().split(" ");
+        Pair R = new Pair(new BigInteger(help[0]), new BigInteger(help[1]));
+        reader.close();
+
+        reader = new FileReader("KK.txt");
+        scan = new Scanner(reader);
+        BigInteger k = scan.nextBigInteger();
+        reader.close();
+
+        int round = 0;
+
+        try
+        {
+            reader = new FileReader("round.txt");
+            scan = new Scanner(reader);
+            round = scan.nextInt();
+            reader.close();
+        }
+        catch (FileNotFoundException e)
+        {
+            FileWriter out = new FileWriter("round.txt");
+            out.write(round + "");
+            out.close();
+        }
+
+        if (bit == 0)
+        {
+            Pair check = mult(P1, k, A1, p1);
+            if (check.x.equals(R.x) && check.y.equals(R.y))
+            {
+                round++;
+                System.out.println("Проверка пройдена. Пользователь знает l с вероятностью " + (1 - 1 / Math.pow(2, round)) + "!");
+                deleteAll();
+            }
+            else
+            {
+                System.out.println("Проверка не пройдена. Пользователь не знает l!");
+                deleteAll();
+                Files.deleteIfExists(new File("round.txt").toPath());
+                return;
+            }
+        }
+        else
+        {
+            Pair check = mult(Q1, k, A1, p1);
+            if (check.x.equals(R.x) && check.y.equals(R.y))
+            {
+                round++;
+                System.out.println("Проверка пройдена. Пользователь знает l с вероятностью " + (1 - 1 / Math.pow(2, round)) + "!");
+                deleteAll();
+            }
+            else
+            {
+                System.out.println("Проверка не пройдена. Пользователь не знает l!");
+                deleteAll();
+                Files.deleteIfExists(new File("round.txt").toPath());
+                return;
+            }
+        }
+
+        FileWriter out = new FileWriter("round.txt");
+        out.write(round + "");
+        out.close();
+    }
 }
