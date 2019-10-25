@@ -53,6 +53,8 @@ public class ProofZeroCurve
             }
 
         } while (command != 0);
+
+        Files.deleteIfExists(new File("round.txt").toPath());
     }
 
     public static Pair sum(Pair x1y1, Pair x2y2, BigInteger p, BigInteger A) {
