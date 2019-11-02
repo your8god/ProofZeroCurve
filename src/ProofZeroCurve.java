@@ -18,10 +18,11 @@ public class ProofZeroCurve
         System.out.println("2: Верификатор: Проверить точку R и послать претенденту случайный бит");
         System.out.println("3: Претендент: Предьявление показателя k или k' на основе полученного бита");
         System.out.println("4: Верификатор: Проверка знания l претендента");
+        System.out.println("-1: Генерация параметров");
         System.out.print("0: Выход\nКоманда: ");
         Scanner scan = new Scanner(System.in);
         command = scan.nextInt();
-        if (command > 5 || command < 0)
+        if (command > 5 || command < -1)
             System.out.println("Неверный ввод");
     }
 
@@ -50,11 +51,12 @@ public class ProofZeroCurve
                 case 4:
                     step4();
                     break;
+                case -1:
+                    gengEll();
+                    break;
             }
 
         } while (command != 0);
-
-        Files.deleteIfExists(new File("round.txt").toPath());
     }
 
     public static Pair sum(Pair x1y1, Pair x2y2, BigInteger p, BigInteger A) {
@@ -155,6 +157,10 @@ public class ProofZeroCurve
         //Files.deleteIfExists(new File("round.txt").toPath());
     }
 
+    public static void gengEll() throws IOException
+    {
+        GengEllipticCurve curve = new GengEllipticCurve();
+    }
 //*******************************************************************************************************************************************************************
 //первый шаг: "Претендент: Сгенерировать точку R и отправить верификатору"
 
@@ -201,8 +207,8 @@ public class ProofZeroCurve
             if (checkMult(R, r1, A1, p1)) {
                 System.out.println("Некорректая точка R");
                 reader.close();
-                deleteAll();
-                Files.deleteIfExists(new File("round.txt").toPath());
+                //deleteAll();
+                //Files.deleteIfExists(new File("round.txt").toPath());
                 return;
             }
 
@@ -295,7 +301,7 @@ public class ProofZeroCurve
                 if (check.x.equals(R.x) && check.y.equals(R.y)) {
                     round++;
                     System.out.println("Проверка пройдена. Пользователь знает l с вероятностью " + (1 - 1 / Math.pow(2, round)) + "!");
-                    deleteAll();
+                    //deleteAll();
                 } else {
                     System.out.println("Проверка не пройдена. Пользователь не знает l!");
                     deleteAll();
@@ -307,7 +313,7 @@ public class ProofZeroCurve
                 if (check.x.equals(R.x) && check.y.equals(R.y)) {
                     round++;
                     System.out.println("Проверка пройдена. Пользователь знает l с вероятностью " + (1 - 1 / Math.pow(2, round)) + "!");
-                    deleteAll();
+                    //deleteAll();
                 } else {
                     System.out.println("Проверка не пройдена. Пользователь не знает l!");
                     deleteAll();
